@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <style>
+        body { background: #0b0e14; color: white; text-align: center; padding: 50px; font-family: sans-serif; }
+        .loader { border: 5px solid #333; border-top: 5px solid #bc13fe; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <h2>Redirecting to Destination...</h2>
+    <div class="loader"></div>
+    <p id="status">Fetching Secure Path...</p>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjv193gNBhYKjXxk9Q4iHXqcVTHeD9IXM",
+        authDomain: "watch-1b375.firebaseapp.com",
+        databaseURL: "https://watch-1b375-default-rtdb.firebaseio.com",
+        projectId: "watch-1b375",
+        storageBucket: "watch-1b375.firebasestorage.app",
+        messagingSenderId: "963767546203",
+        appId: "1:963767546203:web:7788de1edf0a15c5a36a7e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const q = new URLSearchParams(window.location.search);
+    const id = q.get('id');
+
+    if (id) {
+        // Step 1: Get Admin Master Link
+        get(ref(db, 'adminSettings/masterRedirect')).then((masterSnap) => {
+            const masterLink = masterSnap.val();
+
+            // Step 2: Get User Final Link
+            get(ref(db, 'links/' + id)).then(async (userSnap) => {
+                if (userSnap.exists()) {
+                    const finalUrl = userSnap.val().url;
+                    
+                    // Click Counter Update
+                    await update(ref(db, 'links/' + id), { clicks: (userSnap.val().clicks || 0) + 1 });
+
+                    // Logic: Agar Admin Link set hai, toh pehle waha bhejo
+                    if (masterLink) {
+                        document.getElementById('status').innerText = "Opening Secure Ad/Link...";
+                        // User ko Master Link par bhejenge aur session storage use karenge taaki loop na bane
+                        if(!sessionStorage.getItem('adSeen')){
+                            sessionStorage.setItem('adSeen', 'true');
+                            window.location.href = masterLink; 
+                        } else {
+                            window.location.replace(finalUrl);
+                        }
+                    } else {
+                        window.location.replace(finalUrl);
+                    }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>
